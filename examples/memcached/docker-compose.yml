@@ -1,0 +1,33 @@
+version: "3.8"
+
+services:
+  memcached-1:
+    image: memcached:1.6-alpine
+    container_name: kf-memcached-node-1
+    ports:
+      - "11211:11211"
+    command: memcached -m 64 -p 11211 -u memcache -l 0.0.0.0 -v
+    networks:
+      - memcached-network
+
+  memcached-2:
+    image: memcached:1.6-alpine
+    container_name: kf-memcached-node-2
+    ports:
+      - "11212:11211"
+    command: memcached -m 64 -p 11211 -u memcache -l 0.0.0.0 -v
+    networks:
+      - memcached-network
+
+  memcached-3:
+    image: memcached:1.6-alpine
+    container_name: kf-memcached-node-3
+    ports:
+      - "11213:11211"
+    command: memcached -m 64 -p 11211 -u memcache -l 0.0.0.0 -v
+    networks:
+      - memcached-network
+
+networks:
+  memcached-network:
+    driver: bridge
