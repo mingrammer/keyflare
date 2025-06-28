@@ -167,11 +167,11 @@ item, err := client.Get("my-key")
 ```go
 err := keyflare.New(
     keyflare.WithDetectorOptions(keyflare.DetectorOptions{
-        Capacity:      10000,  // Max keys to track
-        TopK:          100,    // Number of top hot keys
+        ErrorRate:     0.001,  // Acceptable error rate for probabilistic algorithms
+        TopK:          100,    // Number of top hot keys to track
         DecayFactor:   0.98,   // Decay rate for aging data
         DecayInterval: 60,     // Decay interval in seconds
-        HotThreshold:  1000,   // Threshold for hot key detection
+        HotThreshold:  1000,   // Threshold for hot key detection (0 means automatic)
     }),
 )
 ```
