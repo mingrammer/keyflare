@@ -9,6 +9,16 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/mingrammer/keyflare.svg)](https://pkg.go.dev/github.com/mingrammer/keyflare)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
+- [Features](#features)
+- [Why KeyFlare?](#why-keyflare)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Configuration](#configuration)
+- [Monitoring](#monitoring)
+- [Architecture](#architecture)
+- [How It Works](#how-it-works)
+- [License](#license)
+
 ## Features
 
 - **Real-time Hot Key Detection**: Uses Count-Min Sketch and Space-Saving algorithms for efficient hot key identification
@@ -319,15 +329,6 @@ Real-time insights are provided through:
 - Prometheus metrics for alerting and dashboards
 - REST API for programmatic access
 - Time-series data for trend analysis
-
-## Benefits Over Traditional Approaches
-
-| Aspect               | Traditional Full Tracking        | KeyFlare                           |
-| -------------------- | -------------------------------- | ---------------------------------- |
-| Memory Usage         | O(n) - grows with unique keys    | O(1) - constant memory             |
-| Detection Accuracy   | 100%                             | >99% with configurable precision   |
-| Performance Impact   | High - scales with key diversity | Low - constant overhead            |
-| Production Readiness | Memory concerns at scale         | Designed for high-scale production |
 
 ## License
 
