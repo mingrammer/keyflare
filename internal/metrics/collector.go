@@ -52,20 +52,6 @@ type Collector interface {
 	Stop() error
 }
 
-// hotKeySnapshot represents a point-in-time snapshot of hot keys
-type hotKeySnapshot struct {
-	Timestamp time.Time           `json:"timestamp"`
-	Keys      []detector.KeyCount `json:"keys"`
-	KeyMeta   map[string]*keyMeta `json:"-"` // Internal metadata
-}
-
-// keyMeta tracks metadata for each key
-type keyMeta struct {
-	FirstSeen time.Time
-	LastSeen  time.Time
-	PrevCount uint64
-}
-
 // New creates a new metrics collector with the provided configuration
 func New(config Config) Collector {
 	if config.HotKeyMetricLimit <= 0 {

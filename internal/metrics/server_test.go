@@ -93,7 +93,7 @@ func TestMetricServer_HandleHotKeys_Empty(t *testing.T) {
 		t.Errorf("Expected Content-Type application/json, got %s", w.Header().Get("Content-Type"))
 	}
 
-	var response HotKeysResponse
+	var response hotKeysResponse
 	if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
 		t.Fatalf("Failed to parse JSON response: %v", err)
 	}
@@ -130,7 +130,7 @@ func TestMetricServer_HandleHotKeys_WithData(t *testing.T) {
 		t.Errorf("Expected status 200, got %d", w.Code)
 	}
 
-	var response HotKeysResponse
+	var response hotKeysResponse
 	if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
 		t.Fatalf("Failed to parse JSON response: %v", err)
 	}
@@ -206,7 +206,7 @@ func TestMetricServer_HandleHotKeys_WithLimit(t *testing.T) {
 		t.Errorf("Expected status 200, got %d", w.Code)
 	}
 
-	var response HotKeysResponse
+	var response hotKeysResponse
 	if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
 		t.Fatalf("Failed to parse JSON response: %v", err)
 	}
@@ -249,7 +249,7 @@ func TestMetricServer_HandleHotKeys_InvalidLimit(t *testing.T) {
 		t.Errorf("Expected status 200, got %d", w.Code)
 	}
 
-	var response HotKeysResponse
+	var response hotKeysResponse
 	if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
 		t.Fatalf("Failed to parse JSON response: %v", err)
 	}
@@ -293,7 +293,7 @@ func TestMetricServer_HandleHotKeys_TrendDetection(t *testing.T) {
 
 	server.handleHotKeys(w, req)
 
-	var response HotKeysResponse
+	var response hotKeysResponse
 	if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
 		t.Fatalf("Failed to parse JSON response: %v", err)
 	}
@@ -355,7 +355,7 @@ func TestMetricServer_CollectionTicker(t *testing.T) {
 	snapshot := server.hotKeyHistory.GetLatest()
 	if snapshot == nil {
 		t.Error("Expected snapshot after collection cycle")
-	} else if len(snapshot.Keys) == 0 {
+	} else if len(snapshot.keys) == 0 {
 		t.Error("Expected some keys in collected snapshot")
 	}
 

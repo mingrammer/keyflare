@@ -14,8 +14,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-// HotKeyInfo contains detailed information about a hot key (for API responses)
-type HotKeyInfo struct {
+// hotKeyInfo contains detailed information about a hot key (for API responses)
+type hotKeyInfo struct {
 	Key       string    `json:"key"`
 	Count     uint64    `json:"count"`
 	Rank      int       `json:"rank"`
@@ -24,45 +24,45 @@ type HotKeyInfo struct {
 	Trend     string    `json:"trend"` // "rising", "falling", "stable", "new"
 }
 
-// HotKeysResponse is the API response for hot keys
-type HotKeysResponse struct {
+// hotKeysResponse is the API response for hot keys
+type hotKeysResponse struct {
 	Timestamp   time.Time        `json:"timestamp"`
 	TopK        int              `json:"top_k"`
 	TotalKeys   int              `json:"total_keys"`
-	Keys        []HotKeyInfo     `json:"keys"`
+	Keys        []hotKeyInfo     `json:"keys"`
 	QueryLimit  int              `json:"query_limit"`
 	ActualLimit int              `json:"actual_limit"`
-	TimeSeries  []TimeSeriesData `json:"time_series,omitempty"` // 시계열 데이터 추가
+	TimeSeries  []timeSeriesData `json:"time_series,omitempty"`
 }
 
-// TimeSeriesData represents hot key counts over time
-type TimeSeriesData struct {
+// timeSeriesData represents hot key counts over time
+type timeSeriesData struct {
 	Timestamp time.Time          `json:"timestamp"`
 	Keys      map[string]uint64  `json:"keys"`     // key -> cumulative count
 	Rates     map[string]float64 `json:"rates"`    // key -> count per second
 	Interval  float64            `json:"interval"` // seconds between this and previous measurement
 }
 
-// KeyMetadata stores metadata about keys
-type KeyMetadata struct {
-	FirstSeen time.Time
-	LastSeen  time.Time
-	PrevCount uint64
+// keyMetadata stores metadata about keys
+type keyMetadata struct {
+	firstSeen time.Time
+	lastSeen  time.Time
+	prevCount uint64
 }
 
-// HotKeySnapshot represents a snapshot of hot keys at a point in time
-type HotKeySnapshot struct {
-	Timestamp time.Time
-	Keys      []detector.KeyCount
-	KeyMeta   map[string]KeyMetadata
+// hotKeySnapshot represents a snapshot of hot keys at a point in time
+type hotKeySnapshot struct {
+	timestamp time.Time
+	keys      []detector.KeyCount
+	keyMeta   map[string]keyMetadata
 }
 
 // hotKeyHistory maintains a history of hot key snapshots
 type hotKeyHistory struct {
 	mu        sync.RWMutex
-	snapshots []HotKeySnapshot
+	snapshots []hotKeySnapshot
 	maxSize   int
-	keyMeta   map[string]KeyMetadata // 전체 키 메타데이터
+	keyMeta   map[string]keyMetadata
 }
 
 // newHotKeyHistory creates a new hot key history tracker
@@ -71,9 +71,9 @@ func newHotKeyHistory(maxSize int) *hotKeyHistory {
 		maxSize = 30 // default 30 snapshots
 	}
 	return &hotKeyHistory{
-		snapshots: make([]HotKeySnapshot, 0, maxSize),
+		snapshots: make([]hotKeySnapshot, 0, maxSize),
 		maxSize:   maxSize,
-		keyMeta:   make(map[string]KeyMetadata),
+		keyMeta:   make(map[string]keyMetadata),
 	}
 }
 
@@ -85,30 +85,28 @@ func (h *hotKeyHistory) Add(keys []detector.KeyCount) {
 	now := time.Now()
 
 	// Update key metadata
-	currentMeta := make(map[string]KeyMetadata)
+	currentMeta := make(map[string]keyMetadata)
 	for _, kc := range keys {
-		existing, exists := h.keyMeta[kc.Key]
-		if !exists {
+		existing, ok := h.keyMeta[kc.Key]
+		if !ok {
 			// New key
-			existing = KeyMetadata{
-				FirstSeen: now,
-				LastSeen:  now,
-				PrevCount: 0,
+			existing = keyMetadata{
+				firstSeen: now,
+				lastSeen:  now,
+				prevCount: 0,
 			}
 		} else {
-			// Update existing key
-			existing.LastSeen = now
-			existing.PrevCount = existing.PrevCount // Will be updated after snapshot
+			existing.lastSeen = now
 		}
 		currentMeta[kc.Key] = existing
 		h.keyMeta[kc.Key] = existing
 	}
 
 	// Create snapshot
-	snapshot := HotKeySnapshot{
-		Timestamp: now,
-		Keys:      keys,
-		KeyMeta:   currentMeta,
+	snapshot := hotKeySnapshot{
+		timestamp: now,
+		keys:      keys,
+		keyMeta:   currentMeta,
 	}
 
 	// Add to snapshots
@@ -121,15 +119,15 @@ func (h *hotKeyHistory) Add(keys []detector.KeyCount) {
 
 	// Update previous counts for next iteration
 	for _, kc := range keys {
-		if meta, exists := h.keyMeta[kc.Key]; exists {
-			meta.PrevCount = kc.Count
+		if meta, ok := h.keyMeta[kc.Key]; ok {
+			meta.prevCount = kc.Count
 			h.keyMeta[kc.Key] = meta
 		}
 	}
 }
 
 // GetLatest returns the latest snapshot
-func (h *hotKeyHistory) GetLatest() *HotKeySnapshot {
+func (h *hotKeyHistory) GetLatest() *hotKeySnapshot {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 
@@ -140,12 +138,12 @@ func (h *hotKeyHistory) GetLatest() *HotKeySnapshot {
 }
 
 // GetTimeSeries returns time series data for specified keys
-func (h *hotKeyHistory) GetTimeSeries(keys []string, maxPoints int) []TimeSeriesData {
+func (h *hotKeyHistory) GetTimeSeries(keys []string, maxPoints int) []timeSeriesData {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 
 	if len(h.snapshots) == 0 {
-		return []TimeSeriesData{}
+		return []timeSeriesData{}
 	}
 
 	// Determine which snapshots to include
@@ -154,7 +152,7 @@ func (h *hotKeyHistory) GetTimeSeries(keys []string, maxPoints int) []TimeSeries
 		startIdx = len(h.snapshots) - maxPoints
 	}
 
-	result := make([]TimeSeriesData, 0, len(h.snapshots)-startIdx)
+	result := make([]timeSeriesData, 0, len(h.snapshots)-startIdx)
 
 	// Track previous counts for rate calculation
 	prevCounts := make(map[string]uint64)
@@ -168,14 +166,14 @@ func (h *hotKeyHistory) GetTimeSeries(keys []string, maxPoints int) []TimeSeries
 		// Calculate time interval
 		var interval float64 = 0
 		if i > startIdx {
-			interval = snapshot.Timestamp.Sub(prevTimestamp).Seconds()
+			interval = snapshot.timestamp.Sub(prevTimestamp).Seconds()
 		}
 
 		// Include data for all specified keys
 		for _, key := range keys {
 			// Find the key in this snapshot
 			currentCount := uint64(0)
-			for _, kc := range snapshot.Keys {
+			for _, kc := range snapshot.keys {
 				if kc.Key == key {
 					currentCount = kc.Count
 					break
@@ -185,8 +183,8 @@ func (h *hotKeyHistory) GetTimeSeries(keys []string, maxPoints int) []TimeSeries
 
 			// Calculate rate (count per second)
 			if i > startIdx && interval > 0 {
-				prevCount, exists := prevCounts[key]
-				if exists {
+				prevCount, ok := prevCounts[key]
+				if ok {
 					// Calculate delta and rate
 					delta := int64(currentCount) - int64(prevCount)
 					if delta < 0 {
@@ -207,14 +205,14 @@ func (h *hotKeyHistory) GetTimeSeries(keys []string, maxPoints int) []TimeSeries
 			prevCounts[key] = currentCount
 		}
 
-		result = append(result, TimeSeriesData{
-			Timestamp: snapshot.Timestamp,
+		result = append(result, timeSeriesData{
+			Timestamp: snapshot.timestamp,
 			Keys:      keyData,
 			Rates:     rateData,
 			Interval:  interval,
 		})
 
-		prevTimestamp = snapshot.Timestamp
+		prevTimestamp = snapshot.timestamp
 	}
 
 	return result
@@ -382,39 +380,42 @@ func (s *metricServer) handleHotKeys(w http.ResponseWriter, r *http.Request) {
 	snapshot := s.hotKeyHistory.GetLatest()
 	if snapshot == nil {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(HotKeysResponse{
+		err := json.NewEncoder(w).Encode(hotKeysResponse{
 			Timestamp: time.Now(),
-			Keys:      []HotKeyInfo{},
+			Keys:      []hotKeyInfo{},
 		})
+		if err != nil {
+			http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+		}
 		return
 	}
 
 	// Convert to HotKeyInfo with enriched data
-	hotKeys := make([]HotKeyInfo, 0, len(snapshot.Keys))
+	hotKeys := make([]hotKeyInfo, 0, len(snapshot.keys))
 	topKeyNames := make([]string, 0, limit) // For time series
-	for i, kc := range snapshot.Keys {
+	for i, kc := range snapshot.keys {
 		// Apply limit
 		if i >= limit {
 			break
 		}
 
-		info := HotKeyInfo{
+		info := hotKeyInfo{
 			Key:   kc.Key,
 			Count: kc.Count,
 			Rank:  i + 1,
 		}
 
 		// Add metadata
-		if meta, ok := snapshot.KeyMeta[kc.Key]; ok {
-			info.FirstSeen = meta.FirstSeen
-			info.LastSeen = meta.LastSeen
+		if meta, ok := snapshot.keyMeta[kc.Key]; ok {
+			info.FirstSeen = meta.firstSeen
+			info.LastSeen = meta.lastSeen
 
 			// Determine trend
-			if meta.PrevCount == 0 {
+			if meta.prevCount == 0 {
 				info.Trend = "new"
-			} else if kc.Count > meta.PrevCount {
+			} else if kc.Count > meta.prevCount {
 				info.Trend = "rising"
-			} else if kc.Count < meta.PrevCount {
+			} else if kc.Count < meta.prevCount {
 				info.Trend = "falling"
 			} else {
 				info.Trend = "stable"
@@ -426,10 +427,10 @@ func (s *metricServer) handleHotKeys(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create response
-	response := HotKeysResponse{
-		Timestamp:   snapshot.Timestamp,
-		TopK:        len(snapshot.Keys),
-		TotalKeys:   len(snapshot.Keys),
+	response := hotKeysResponse{
+		Timestamp:   snapshot.timestamp,
+		TopK:        len(snapshot.keys),
+		TotalKeys:   len(snapshot.keys),
 		Keys:        hotKeys,
 		QueryLimit:  limit,
 		ActualLimit: len(hotKeys),
@@ -447,7 +448,11 @@ func (s *metricServer) handleHotKeys(w http.ResponseWriter, r *http.Request) {
 
 	// Send JSON response
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	err := json.NewEncoder(w).Encode(response)
+	if err != nil {
+		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
 }
 
 // handleRoot handles the root endpoint
@@ -463,7 +468,11 @@ func (s *metricServer) handleRoot(w http.ResponseWriter, r *http.Request) {
 		</body>
 		</html>`
 
-	w.Write([]byte(html))
+	_, err := w.Write([]byte(html))
+	if err != nil {
+		http.Error(w, "Failed to write response", http.StatusInternalServerError)
+		return
+	}
 }
 
 // Start starts the metric server

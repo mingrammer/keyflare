@@ -114,13 +114,13 @@ func TestMetricServer_UpdateHotKeys(t *testing.T) {
 		t.Fatal("Expected snapshot after UpdateHotKeys")
 	}
 
-	if len(snapshot.Keys) != 5 {
-		t.Errorf("Expected 5 keys in snapshot, got %d", len(snapshot.Keys))
+	if len(snapshot.keys) != 5 {
+		t.Errorf("Expected 5 keys in snapshot, got %d", len(snapshot.keys))
 	}
 
 	// Check that all keys have metadata
-	for _, kc := range snapshot.Keys {
-		if _, ok := snapshot.KeyMeta[kc.Key]; !ok {
+	for _, kc := range snapshot.keys {
+		if _, ok := snapshot.keyMeta[kc.Key]; !ok {
 			t.Errorf("Missing metadata for key %s", kc.Key)
 		}
 	}
@@ -167,8 +167,8 @@ func TestHotKeyHistory_Add(t *testing.T) {
 		t.Fatal("Expected snapshot after Add")
 	}
 
-	if len(snapshot.Keys) != 2 {
-		t.Errorf("Expected 2 keys, got %d", len(snapshot.Keys))
+	if len(snapshot.keys) != 2 {
+		t.Errorf("Expected 2 keys, got %d", len(snapshot.keys))
 	}
 
 	// Add more snapshots to test circular buffer
@@ -186,7 +186,7 @@ func TestHotKeyHistory_Add(t *testing.T) {
 		t.Fatal("Expected latest snapshot")
 	}
 
-	if len(latestSnapshot.Keys) != 1 || latestSnapshot.Keys[0].Key != "key5" {
+	if len(latestSnapshot.keys) != 1 || latestSnapshot.keys[0].Key != "key5" {
 		t.Error("Latest snapshot not correct after circular buffer wrap")
 	}
 }
@@ -220,9 +220,9 @@ func TestHotKeyHistory_TrendCalculation(t *testing.T) {
 
 	// First snapshot - all keys should have PrevCount = 0 (new keys)
 	for _, kc := range keys1 {
-		meta := snapshot1.KeyMeta[kc.Key]
-		if meta.PrevCount != 0 {
-			t.Errorf("Key %s: expected PrevCount 0 for first snapshot, got %d", kc.Key, meta.PrevCount)
+		meta := snapshot1.keyMeta[kc.Key]
+		if meta.prevCount != 0 {
+			t.Errorf("Key %s: expected PrevCount 0 for first snapshot, got %d", kc.Key, meta.prevCount)
 		}
 	}
 
@@ -256,19 +256,19 @@ func TestHotKeyHistory_TrendCalculation(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		meta, ok := snapshot2.KeyMeta[tc.key]
+		meta, ok := snapshot2.keyMeta[tc.key]
 		if !ok {
 			t.Errorf("Key %s not found in snapshot", tc.key)
 			continue
 		}
 
-		if meta.PrevCount != tc.expectedPrev {
-			t.Errorf("Key %s: expected PrevCount %d, got %d", tc.key, tc.expectedPrev, meta.PrevCount)
+		if meta.prevCount != tc.expectedPrev {
+			t.Errorf("Key %s: expected PrevCount %d, got %d", tc.key, tc.expectedPrev, meta.prevCount)
 		}
 
 		// Find current count in snapshot
 		var currentCount uint64
-		for _, kc := range snapshot2.Keys {
+		for _, kc := range snapshot2.keys {
 			if kc.Key == tc.key {
 				currentCount = kc.Count
 				break
@@ -281,11 +281,11 @@ func TestHotKeyHistory_TrendCalculation(t *testing.T) {
 
 		// Verify trend logic
 		var actualTrend string
-		if meta.PrevCount == 0 {
+		if meta.prevCount == 0 {
 			actualTrend = "new"
-		} else if currentCount > meta.PrevCount {
+		} else if currentCount > meta.prevCount {
 			actualTrend = "rising"
-		} else if currentCount < meta.PrevCount {
+		} else if currentCount < meta.prevCount {
 			actualTrend = "falling"
 		} else {
 			actualTrend = "stable"
@@ -293,7 +293,7 @@ func TestHotKeyHistory_TrendCalculation(t *testing.T) {
 
 		if actualTrend != tc.expectedTrend {
 			t.Errorf("Key %s: expected trend %s, got %s (current: %d, prev: %d)",
-				tc.key, tc.expectedTrend, actualTrend, currentCount, meta.PrevCount)
+				tc.key, tc.expectedTrend, actualTrend, currentCount, meta.prevCount)
 		}
 	}
 
@@ -306,16 +306,16 @@ func TestHotKeyHistory_TrendCalculation(t *testing.T) {
 	history.Add(keys3)
 
 	snapshot3 := history.GetLatest()
-	meta3stable := snapshot3.KeyMeta["stable"]
-	meta3rising := snapshot3.KeyMeta["rising"]
+	meta3stable := snapshot3.keyMeta["stable"]
+	meta3rising := snapshot3.keyMeta["rising"]
 
 	// PrevCount should now be actual counts from snapshot2
-	if meta3stable.PrevCount != 100 {
-		t.Errorf("Expected stable PrevCount 100 (from snapshot2), got %d", meta3stable.PrevCount)
+	if meta3stable.prevCount != 100 {
+		t.Errorf("Expected stable PrevCount 100 (from snapshot2), got %d", meta3stable.prevCount)
 	}
 
-	if meta3rising.PrevCount != 80 {
-		t.Errorf("Expected rising PrevCount 80 (from snapshot2), got %d", meta3rising.PrevCount)
+	if meta3rising.prevCount != 80 {
+		t.Errorf("Expected rising PrevCount 80 (from snapshot2), got %d", meta3rising.prevCount)
 	}
 }
 
@@ -334,14 +334,14 @@ func TestHotKeyHistory_Metadata(t *testing.T) {
 	}
 
 	// Check metadata was created
-	meta, ok := snapshot1.KeyMeta["key1"]
+	meta, ok := snapshot1.keyMeta["key1"]
 	if !ok {
 		t.Fatal("Expected metadata for key1")
 	}
 
-	firstSeen := meta.FirstSeen
-	if meta.PrevCount != 0 {
-		t.Errorf("Expected PrevCount 0 after first snapshot, got %d", meta.PrevCount)
+	firstSeen := meta.firstSeen
+	if meta.prevCount != 0 {
+		t.Errorf("Expected PrevCount 0 after first snapshot, got %d", meta.prevCount)
 	}
 
 	// Wait a bit and add another snapshot with same key but different count
@@ -356,24 +356,24 @@ func TestHotKeyHistory_Metadata(t *testing.T) {
 		t.Fatal("Expected second snapshot")
 	}
 
-	meta2, ok := snapshot2.KeyMeta["key1"]
+	meta2, ok := snapshot2.keyMeta["key1"]
 	if !ok {
 		t.Fatal("Expected metadata for key1 in second snapshot")
 	}
 
 	// FirstSeen should be preserved, LastSeen should be updated
-	if !meta2.FirstSeen.Equal(firstSeen) {
+	if !meta2.firstSeen.Equal(firstSeen) {
 		t.Error("FirstSeen should be preserved across snapshots")
 	}
 
-	if !meta2.LastSeen.After(firstSeen) {
+	if !meta2.lastSeen.After(firstSeen) {
 		t.Error("LastSeen should be updated")
 	}
 
 	// PrevCount should now reflect the previous snapshot's count (10)
 	// This allows trend calculation to compare 20 (current) vs 10 (previous)
-	if meta2.PrevCount != 10 {
-		t.Errorf("Expected PrevCount 10 for trend calculation, got %d", meta2.PrevCount)
+	if meta2.prevCount != 10 {
+		t.Errorf("Expected PrevCount 10 for trend calculation, got %d", meta2.prevCount)
 	}
 
 	// Wait and add third snapshot to verify PrevCount gets updated
@@ -384,11 +384,11 @@ func TestHotKeyHistory_Metadata(t *testing.T) {
 	history.Add(keys3)
 
 	snapshot3 := history.GetLatest()
-	meta3 := snapshot3.KeyMeta["key1"]
+	meta3 := snapshot3.keyMeta["key1"]
 
 	// Now PrevCount should be 20 (from previous snapshot)
-	if meta3.PrevCount != 20 {
-		t.Errorf("Expected PrevCount 20 for trend calculation, got %d", meta3.PrevCount)
+	if meta3.prevCount != 20 {
+		t.Errorf("Expected PrevCount 20 for trend calculation, got %d", meta3.prevCount)
 	}
 }
 
@@ -473,7 +473,7 @@ func TestMetricServer_CollectMetrics(t *testing.T) {
 		t.Fatal("Expected snapshot after collectMetrics")
 	}
 
-	if len(snapshot.Keys) == 0 {
+	if len(snapshot.keys) == 0 {
 		t.Error("Expected some keys in snapshot")
 	}
 }
