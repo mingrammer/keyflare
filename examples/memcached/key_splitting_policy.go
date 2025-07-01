@@ -50,10 +50,7 @@ func KeySplittingPolicyExample(runSimulation bool) {
 	if err := keyflare.Start(); err != nil {
 		log.Fatal("Failed to start KeyFlare:", err)
 	}
-	defer func() {
-		keyflare.Stop()
-		keyflare.Shutdown()
-	}()
+	defer keyflare.Stop()
 
 	// Create Memcached client
 	mc := memcache.New("localhost:11211")

@@ -104,32 +104,8 @@ func Start() error {
 	return nil
 }
 
-// Stop stops the global KeyFlare instance
+// Stop stops and clears the global KeyFlare instance
 func Stop() error {
-	mu.Lock()
-	defer mu.Unlock()
-
-	if globalInstance == nil {
-		return fmt.Errorf("KeyFlare is not initialized")
-	}
-
-	if !globalInstance.isRunning {
-		return fmt.Errorf("KeyFlare is not running")
-	}
-
-	// Stop metrics collector
-	if globalInstance.metrics != nil {
-		if err := globalInstance.metrics.Stop(); err != nil {
-			return err
-		}
-	}
-
-	globalInstance.isRunning = false
-	return nil
-}
-
-// Shutdown stops and clears the global KeyFlare instance
-func Shutdown() error {
 	mu.Lock()
 	defer mu.Unlock()
 
@@ -150,6 +126,7 @@ func Shutdown() error {
 	globalInstance = nil
 	return nil
 }
+
 
 // GetInstance returns the global KeyFlare instance for use by wrapper packages
 func GetInstance() (*KeyFlare, error) {

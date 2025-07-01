@@ -90,7 +90,6 @@ if err != nil {
     log.Fatal(err)
 }
 defer keyflare.Stop()
-defer keyflare.Shutdown()
 ```
 
 ### 2. Wrap Your Cache Client

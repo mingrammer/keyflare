@@ -301,14 +301,9 @@ func Start() error {
 	return internal.Start()
 }
 
-// Stop stops the global KeyFlare instance
+// Stop stops and clears the global KeyFlare instance
 func Stop() error {
 	return internal.Stop()
-}
-
-// Shutdown stops and clears the global KeyFlare instance
-func Shutdown() error {
-	return internal.Shutdown()
 }
 
 // applyOptionsDefaults applies default values to missing fields in the provided options
