@@ -10,7 +10,6 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 - [Features](#features)
-- [Why KeyFlare?](#why-keyflare)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
 - [Configuration](#configuration)
