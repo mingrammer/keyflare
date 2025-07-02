@@ -28,7 +28,7 @@ Keyflare takes a simple yet effective approach:
 - **Policy-Based Mitigation**: Automatic application of mitigation strategies (local caching, key splitting) when hot keys are detected
 - **Non-Intrusive Integration**: Easy integration with existing cache clients without code changes
 - **Comprehensive Monitoring**: Prometheus metrics and REST API for hot key insights
-- **Multi-Client Support**: Works with Redis (go-redis), Memcached (gomemcache), and Rueidis clients
+- **Multi-Client Support**: Works with Redis (go-redis and rueidis), Memcached (gomemcache).
 
 ## Installation
 
