@@ -15,9 +15,12 @@
 - [Quick Start](#quick-start)
 - [Configuration](#configuration)
 - [Monitoring](#monitoring)
-- [Architecture](#architecture)
 - [How It Works](#how-it-works)
 - [License](#license)
+
+In large-scale, sharded Redis/Memcached cluster, hot keys can cause serious bottlenecks on specific nodes. Traditional server-side detection or telemetry-based methods often require complex infra changes or deep integration.
+
+Keyflare takes a simple yet effective approach:
 
 ## Features
 
@@ -27,14 +30,6 @@
 - **Non-Intrusive Integration**: Easy integration with existing cache clients without code changes
 - **Comprehensive Monitoring**: Prometheus metrics and REST API for hot key insights
 - **Multi-Client Support**: Works with Redis (go-redis), Memcached (gomemcache), and Rueidis clients
-
-## Why KeyFlare?
-
-Traditional hot key detection approaches often track every single key access, leading to significant memory overhead and scalability issues. KeyFlare takes a different approach:
-
-- **Memory Efficiency**: Uses constant memory regardless of the number of unique keys
-- **High Accuracy**: Probabilistic algorithms provide >99% accuracy for hot key detection
-- **Real-time Processing**: Immediate detection and mitigation without batch processing delays
 
 ## Installation
 
@@ -270,42 +265,15 @@ Response format:
 }
 ```
 
-## Architecture
-
-KeyFlare employs a sophisticated multi-algorithm approach for efficient hot key detection:
-
-### Core Concepts
-
-- **Count-Min Sketch (CMS)**: Provides accurate frequency estimation with constant memory usage
-- **Space-Saving (SS)**: Efficiently maintains top-K frequent items
-- **Exponential Decay**: Ages old data to adapt to changing access patterns
-- **Policy Engine**: Automatically applies mitigation strategies
-
-### Detection Pipeline
-
-1. **Key Access Tracking**: Every cache operation increments counters in both CMS and SS
-2. **Frequency Estimation**: CMS provides accurate count estimates with minimal memory
-3. **Top-K Maintenance**: SS algorithm maintains the most frequent keys
-4. **Hot Key Identification**: Keys exceeding thresholds or appearing in top-K are marked as hot
-5. **Policy Application**: Mitigation policies are automatically applied to hot keys
-
-### Memory Efficiency
-
-Traditional approaches that track every key can consume gigabytes of memory in high-traffic systems. KeyFlare uses:
-
-- **Constant Memory**: Memory usage doesn't grow with the number of unique keys
-- **Configurable Precision**: Adjust error rates vs. memory usage based on requirements
-- **Efficient Data Structures**: Optimized implementations of probabilistic algorithms
-
 ## How It Works
 
 ### 1. Detection Phase
 
 When a key is accessed, KeyFlare:
 
-- Updates the Count-Min Sketch with the key
+- Updates the Count-Min Sketch (CMS) with the key
 - Adds/updates the key in the Space-Saving structure
-- Applies time-based decay to prevent stale data
+- Applies time-based decay to prevent stale hot keys
 
 ### 2. Classification Phase
 
